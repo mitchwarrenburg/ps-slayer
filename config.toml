@@ -1,0 +1,167 @@
+##############################################################################
+#  ps-slayer config
+#
+#  Edit, then either restart the app or use tray icon -> "Reload config".
+#  Validate any time with:   python ps_slayer.py --check
+#
+#  To find your wheel's button numbers:
+#      python ps_slayer.py --list-devices     (device names + GUIDs)
+#      python ps_slayer.py --learn            (press buttons, read the indices)
+##############################################################################
+
+[settings]
+poll_hz           = 500     # wheel polling rate. 500 Hz = 2 ms worst-case detection.
+handle_cache      = true    # keep kill handles pre-opened -> ~50 us kills. Leave on.
+handle_refresh_ms = 1000    # how often the cache re-scans for new/dead processes
+sounds            = true    # blade ring = clean kill, scrape = partial, whiff = nothing
+volume            = 0.7     # 0.0 - 1.0.  Preview them:  ps_slayer.py --sounds
+tray              = true    # sword icon (reload / test-fire / quit). Flashes red on a kill
+allow_system      = true    # kill protected OS processes
+log_level         = "INFO"
+
+
+##############################################################################
+#  MAPPINGS
+#
+#  Every [[mapping]] block is one trigger -> one target.
+#
+#  TRIGGER (need at least one; you can set both)
+#    buttons    = [12, 13]      wheel buttons, ALL held at once. From --learn.
+#    device     = "*ascher*"    which controller, glob-matched on its name.
+#                               Omit to accept the combo from any controller.
+#    guid       = "030000..."   exact device, instead of `device`. From --list-devices.
+#    hotkey     = "ctrl+alt+k"  keyboard combo. ctrl/alt/shift/win + a key.
+#                               Keys: a-z, 0-9, f1-f24, num0-num9, esc, space,
+#                               home, end, pgup, pgdn, arrows, del, ins, etc.
+#
+#  TARGET -- one program, or as many as you like
+#    type = "process"    target = "iRacingUI.exe"   exe name. Globs OK: "chrome*.exe"
+#    type = "window"     target = "*telemetry*"     visible window title. Substring
+#                                                   match, or glob if it has * or ?
+#    type = "foreground"                            whatever is focused right now
+#
+#    A list kills all of them from the one press:
+#        target = ["iRacingUI.exe", "SimHub.exe", "Discord.exe"]
+#
+#    To mix types in one mapping, use `targets` with a table per entry. Each entry
+#    can override `type` and `tree`; anything it omits falls back to the mapping:
+#        targets = [
+#          { type = "process", target = "iRacingUI.exe", tree = true },
+#          { type = "process", target = "SimHub.exe" },
+#          { type = "window",  target = "*Telemetry*" },
+#          { type = "foreground" },
+#        ]
+#
+#    `target` and `targets` can both appear; they are killed in the order written.
+#    Everything in a mapping fires back to back with no work in between, so a
+#    multi-program mapping goes down as close to simultaneously as Windows allows.
+#
+#  OPTIONS
+#    tree        = true   also kill child processes (children die first). Applies to
+#                         every target unless an entry in `targets` overrides it
+#    hold_ms     = 300    combo must be held this long. Guards against a mid-race
+#                         elbow. 0 = fire on press.
+#    cooldown_ms = 400    ignore re-triggers within this window
+#    enabled     = false  keep the block but switch it off
+##############################################################################
+
+
+# --- EXAMPLES ---------------------------------------------------------------
+# These are disabled until you fill in real button numbers. Run --learn first,
+# replace the placeholders, then set enabled = true.
+
+[[mapping]]
+name        = "Kill the sim"
+device      = "*ascher*"
+buttons     = [14, 15]          # <-- replace
+type        = "process"
+target      = "iRacingSim64DX11.exe"
+tree        = false
+hold_ms     = 500               # long hold: you do not want this by accident
+cooldown_ms = 2000
+enabled     = false
+
+
+[[mapping]]
+name        = "Kill SimHub"
+buttons     = [20]              # <-- replace
+type        = "process"
+target      = "SimHub.exe"
+tree        = true
+hold_ms     = 250
+enabled     = false
+
+
+# Several programs from one press -- simple list form.
+[[mapping]]
+name        = "Nuke the overlays"
+device      = "*ascher*"
+buttons     = [16, 17]          # <-- replace
+type        = "process"
+target      = ["SimHub.exe", "RaceLabApps.exe", "Discord.exe", "obs64.exe"]
+tree        = true
+hold_ms     = 400
+cooldown_ms = 2000
+enabled     = false
+
+
+# Mixed types from one press -- table form, with a per-target tree override.
+[[mapping]]
+name        = "Full teardown"
+device      = "*ascher*"
+buttons     = [18, 19]          # <-- replace
+tree        = true              # default for every entry below
+targets = [
+  { type = "process", target = "iRacingSim64DX11.exe", tree = false },
+  { type = "process", target = "iRacingUI.exe" },
+  { type = "process", target = "SimHub.exe" },
+  { type = "window",  target = "*Telemetry*" },
+]
+hold_ms     = 750               # long hold: this one ends the session
+cooldown_ms = 5000
+enabled     = false
+
+# Keyboard fallbacks, live from the moment you install. Safe to leave on.
+
+[[mapping]]
+name        = "Panic: kill focused app"
+hotkey      = "ctrl+alt+shift+k"
+type        = "foreground"
+tree        = true
+cooldown_ms = 1000
+enabled     = false
+
+
+# Harmless self-test: open Notepad, press ctrl+alt+n. It should vanish with a
+# blade ring, and the tray sword should flash red. Delete this block once you
+# trust the setup.
+[[mapping]]
+name        = "Self-test: kill Notepad"
+hotkey      = "ctrl+alt+n"
+type        = "process"
+target      = "notepad.exe"
+tree        = false
+
+
+# --- ACTIVE -----------------------------------------------------------------
+[[mapping]]
+name        = "Kill iRacing Simulation"
+device      = "Ascher Racing Artura ULTIMATE"
+buttons     = [24, 26]
+type        = "process"
+target      = "iRacingSim64DX11.exe"
+cooldown_ms = 0
+hold_ms     = 0
+tree        = true
+enabled     = true
+
+[[mapping]]
+name        = "Kill all iRacing processes"
+device      = "Ascher Racing Artura ULTIMATE"
+buttons     = [24, 26]
+type        = "process"
+target = ["*iRacing*", "*iracing*", "iRacingService64.exe"]
+cooldown_ms = 0
+hold_ms     = 2000
+tree        = true
+enabled     = true

@@ -77,7 +77,7 @@ Where to see which you've got:
 To start it elevated by hand, from a normal PowerShell:
 
 ```powershell
-cd C:\Users\mitch\Desktop\Scripts\ps-slayer
+Set-Location "$HOME/workspace/ps-slayer"
 Start-Process .\.venv\Scripts\pythonw.exe -ArgumentList 'ps_slayer.py' -WorkingDirectory $PWD -Verb RunAs
 ```
 
